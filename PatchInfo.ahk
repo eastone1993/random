@@ -11,3 +11,5 @@ FileMoveDir, %source%, %dest%, R
 */
 
 MsgBox, PATCH INFO CALLED 
+
+ExitApp 
