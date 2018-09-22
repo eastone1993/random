@@ -1,6 +1,9 @@
 ;----------------------------------- LIBRARY FOR GUI BUILDING AND USAGE -------------------------------------------------------------------------------------------------------------
+#SingleInstance, force 
+#NoTrayIcon
 
-
+wx := 0
+hx := 0
 
 BuildTap(ByRef buttonName, ByRef buttonText, ByRef x:=50, ByRef y:=0, ByRef w:=200, ByRef h:=30)
 {
@@ -14,7 +17,8 @@ BuildTap(ByRef buttonName, ByRef buttonText, ByRef x:=50, ByRef y:=0, ByRef w:=2
 	y0 := " y" . y
 	w0 := " w" . w 
 	h0 := " h" . h 
-	xywh := x0 . y0 . w0 . h0  
+	xywh := x0 . y0 . w0 . h0 
+
 	
 	;button variable names MUST be preceded by v 
 	OnButton := "v" . buttonName . "On"
@@ -55,18 +59,15 @@ BuildButton(ByRef buttonName, ByRef buttonText, ByRef x:=50, ByRef y:=0, ByRef w
 
 	;builds on and off button 
 	Gui, Add, Button, %xywh% %OnButton% %OnFunction%, %OnText%
-	Gui, Add, Button, %xywh% %OffButton% %OffFunction%, %OffText%
+	Gui, Add, Button, %xywh% Hidden %OffButton% %OffFunction%, %OffText%
 	
-	;intially hides off button so on button shows 
-	GuiControl, Hide, %OffButton0%
-
-	;MsgBox, %OffButton0%
+	;MsgBox, %OffButton%
 
 	return    
 }
 
 
-OnButton(ByRef buttonName)
+OnButton(ByRef buttonName, ByRef dr="", ByRef ext=".ahk")
 {
 	global ;gui controls must use global or static variables
 
@@ -74,7 +75,7 @@ OnButton(ByRef buttonName)
 	local OnButton, OffButton, dir, file1  
 
 	;state params below
-	dir := A_WorkingDir . "\" . buttonName . ".ahk" ;A_WorkingDir is built in variable that refers to current directory working in 
+	dir := A_WorkingDir . dr . "\" . buttonName . ext ;A_WorkingDir is built in variable that refers to current directory working in 
 	OnButton := buttonName . "On"
 	OffButton := buttonName . "Off"
 
@@ -101,7 +102,7 @@ OnButton(ByRef buttonName)
 	return 
 }
 
-Tap(ByRef buttonName)
+Tap(ByRef buttonName, ByRef dr="", ByRef ext=".ahk")
 {
 	global ;gui controls must use global or static variables
 
@@ -110,19 +111,19 @@ Tap(ByRef buttonName)
 
 	;state params below
 	DetectHiddenWindows, On 
-	dir := A_WorkingDir . "\" . buttonName . ".ahk" ;A_WorkingDir is built in variable that refers to current directory working in 
+	dir := A_WorkingDir . dr . "\" . buttonName . ext ;A_WorkingDir is built in variable that refers to current directory working in 
 	WinClose, %dir% ahk_class AutoHotkey 
 	Run, %dir% 
 
 	return 
 }
 
-OffButton(ByRef buttonName)
+OffButton(ByRef buttonName, ByRef dr="", ByRef ext=".ahk")
 {
 	global 
 	local OnButton, OffButton, dir 
 
-	dir := A_WorkingDir . "\" . buttonName . ".ahk"
+	dir := A_WorkingDir . dr . "\" . buttonName . ext 
 	OnButton := buttonName . "On"
 	OffButton := buttonName . "Off" 
 
@@ -145,11 +146,10 @@ ExitAll(params*)
 		dir := A_WorkingDir . "\" . file 
 		WinClose, %dir% ahk_class AutoHotkey 
 	}
-
 	return 
 }
 
-ExitAllArray(params*) ; first parameter is the extension, second is an array of file names without extension
+ExitAllArray(ByRef dr="", ByRef ext=".ahk", params*) ; first parameter is the extension, second is an array of file names without extension
 {
 	
 	global 
@@ -161,14 +161,12 @@ ExitAllArray(params*) ; first parameter is the extension, second is an array of 
 		for index, name in array 
 		{
 		local dir
-		dir := A_WorkingDir . "\" . name . ".ahk"
+		dir := A_WorkingDir . dr . "\" . name . ext 
 		WinClose, %dir% ahk_class AutoHotkey
 		;MsgBox, EXIT %dir%
 		 
 		}
-
 	}
-
 	return 
 }
 
@@ -185,9 +183,10 @@ BuildButtonArray(ByRef x, ByRef y, ByRef w, ByRef h, ByRef s, params0*)
 	y1 := y 
 	s1 := x
 
+	BAheight := 0
+
 	for index, array0 in params0 
 	{
-
 		for index, file in array0 
 		{
 			local dir0 
@@ -199,13 +198,30 @@ BuildButtonArray(ByRef x, ByRef y, ByRef w, ByRef h, ByRef s, params0*)
 		x0 := (x0 + s0 + w0)
 		if (y1 < y0)
 		{
-			height := y0
+			if (y0 > BAheight)
+			{
+				BAheight := y0
+			}
+
 			y0 := y1  
 		}
 	}
 
-	width := x0
+	BAwidth := x0
 	return
+
+}
+
+HideButtonArray(offparams*)
+{
+	global
+	local OffButton 
+	for param in offparams
+	{
+		OffButton := buttonName . "Off"
+		GuiControl, Hide, %OffButton%
+	}
+	return 
 }
 
 BuildTapArray(ByRef x, Byref y, ByRef w, ByRef h, ByRef s, params1*)
@@ -221,27 +237,33 @@ BuildTapArray(ByRef x, Byref y, ByRef w, ByRef h, ByRef s, params1*)
 	y1 := y 
 	s1 := x
 
+	TAheight := 0
+
 	for index, array1 in params1 
 	{
-
 		for index, file in array1 
 		{
 			local dir1 
 			dir1 := file 
 			BuildTap(dir1, dir1, x0, y0, w0, h0)
 			y0 := (y0 + s0 + h0)
-
 		}
 
 		x0 := (x0 + s0 + w0)
 		if (y1 < y0)
 		{
-			height := y0
+			if(y0 > TAheight)
+			{
+				TAheight := y0
+			}
+			
 			y0 := y1  
 		}
 	}
-	width := x0 
+
+	TAwidth := x0
 	return
+
 }
 
 BuildGui(ByRef GuiName, ByRef x, ByRef y)
@@ -249,21 +271,76 @@ BuildGui(ByRef GuiName, ByRef x, ByRef y)
 	global 
 	local xt, yt, ht, wt, gname 
 
+
+	if(TAheight < BAheight)
+	{
+		height := BAheight
+	}
+
+	else 
+	{
+		height := TAheight
+	}
+
+	if(TAwidth < BAwidth)
+	{
+		width := BAwidth
+	} 
+
+	else 
+	{
+		width := TAwidth
+	}
+
+	width := width + wx 
+	height := height + hx
+	
+ 
+
 	gname := GuiName
 	ht := " h" . height 
 	wt := " w" . width 
 	xt := " x" . x
 	yt := " y" . y
 	Gui, Show, %xt% %yt% %ht% %wt%, %gname%
+
 	return 
-
-
 }
 
-class MyButton{
-	;some variables 
+AddGuiDimension(ByRef wid, ByRef het)
+{
+	global 
+	wx := wx + wid 
+	hx := hx + het 
 
-	;methods
-
-	;some functions
+	return 
 }
+
+/*
+#Persistent
+#SingleInstance, force 
+;#NoTrayIcon
+;#Include %A_Desktop%\anchor.ahk 
+Gui, +Resize
+Gui, Show, w1250 h756, E-mail Template Reference Sheet 
+
+WinGetPos, , , GuiWidth, GuiHeight, E-mail Template Reference Sheet 
+
+GW := " w" . GuiWidth
+GH := " h" . GuiHeight
+Gui, Add, Picture, x0 y0 %GW% %GH%, %A_WorkingDir%\images\ref.png
+;MsgBox % GW 
+;MsgBox % GH 
+return 
+
+GuiSize:
+WinGetPos, , , GuiWidth, GuiHeight, E-mail Template Reference Sheet 
+GW := " w" . GuiWidth
+GH := " h" . GuiHeight
+Gui, Add, Picture, x0 y0 %GW% %GH%, %A_WorkingDir%\images\ref.png
+Gui, Show, %GW% %GH%, E-mail Template Reference Sheet 
+return 
+
+GuiClose:
+ExitApp
+*/
