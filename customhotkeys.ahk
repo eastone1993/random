@@ -9,8 +9,7 @@ DetectHiddenWindows, On
 
 
 
-CreateHotkey(ByRef script_path, ByRef phrase, ByRef message) 
-{	
+CreateHotkey(ByRef script_path, ByRef phrase, ByRef message) {	
 	path := script_path
 	text_field := Trim(phrase) 
 	string_edit := message 
@@ -103,8 +102,7 @@ CreateHotkey(ByRef script_path, ByRef phrase, ByRef message)
 	return 
 }
 
-DeleteHotkey(ByRef script_path, ByRef phrase) 
-{
+DeleteHotkey(ByRef script_path, ByRef phrase) {
 
 	path := script_path
 	text_field := phrase 
@@ -170,22 +168,7 @@ DeleteHotkey(ByRef script_path, ByRef phrase)
 }
 ;-------------------------VIEWER---------------------------------------
 
-AddToViewer(arg) ;decides if argument should be added to custom view output
-{
-	;MsgBox % arg 
-	if (arg = "`n") ;does not add extra whitespace
-	{
-		;MsgBox arg executed 
-		Exit ;do not do anything else if whitespace
-	}
-	else 
-	{
-		FileAppend, `n%arg% , %A_ScriptDir%\cus.txt ;add to custom view 
-	} 
-}
-
-CustomHotkeyViewer(ByRef script_path) 
-{
+CustomHotkeyViewer(ByRef script_path) {
 	path := script_path 
 
 	colon := "::"
@@ -216,7 +199,7 @@ CustomHotkeyViewer(ByRef script_path)
 
 	trash := false ;false when adding the line to custom view output
 	
-	Loop, Parse, NewContents, `n`n`n
+	Loop, Parse, NewContents, `n`n`n 
 	{
 		if (A_Index <= end_of_header)
 		{
@@ -257,4 +240,63 @@ CustomHotkeyViewer(ByRef script_path)
 	FileDelete, %A_ScriptDir%\cus.txt
 	;MsgBox % CusView 
 	return CusView 
+}
+
+
+AddToViewer(arg) { ;decides if argument should be added to custom view output
+	;MsgBox % arg 
+	if (arg = "`n") ;does not add extra whitespace
+	{
+		;MsgBox arg executed 
+		Exit ;do not do anything else if whitespace
+	}
+	else 
+	{
+		FileAppend, `n%arg% , %A_ScriptDir%\cus.txt ;add to custom view 
+	} 
+}
+
+
+ViewerSettings(Byref setting, Byref viewVal) { ;user specified setting determines what is displayed by viewer
+	if(setting = 0)
+	{
+		return viewVal ;viewVal has both phrase and message 
+	}
+	if(setting = 1)
+	{
+		return ViewPhraseOnly(viewVal) ;returns the phrase only view 
+	}
+	else
+	{ 
+		return viewVal ;viewVal is default view if nothing else is specified 
+	}
+}
+
+ViewPhraseOnly(Byref viewVal) { ;returns only the phrase 
+	viewText := viewVal
+	viewArray :=[]
+	Loop, Parse, viewText, *   ;parses by the asterik delimiter to separate phrases from their messages
+	if InStr(A_LoopField, "`n") ;when parsed, only messages contain the newline character
+	{
+		continue ;if a newline character is found in loopfield, skip that loopfield 
+	}
+	else 
+	{
+		viewArray.push(A_LoopField) ;pushes the phrase to the array 
+		continue 
+	}
+	return Join("`n`n", viewArray) ;returns the array of phrases separated by newline characters for easier viewing
+}
+
+Join(s,p*) {
+  static _:="".base.Join:=Func("Join")
+  for k,v in p
+  {
+    if isobject(v)
+      for k2, v2 in v
+        o.=s v2
+    else
+      o.=s v
+  }
+  return SubStr(o,StrLen(s)+1)
 }
